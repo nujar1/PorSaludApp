@@ -1,0 +1,245 @@
+﻿@model  PorSaludApp.Models.Cliente
+
+@{
+    ViewBag.Title = "EditarCliente";
+
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Editar Cliente</h2>
+
+    @using (Html.BeginForm("EditarCliente", "Clientes", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.ClienteId)
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Identidad, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(model => model.Identidad, new
+                    {
+                        @class = "form-control",
+                        required = "required",
+                        maxlength = "20"
+                    })
+                    @Html.ValidationMessageFor(model => model.Identidad, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.NombreCompleto, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(model => model.NombreCompleto, new
+                    {
+                        @class = "form-control",
+                        required = "required",
+                        maxlength = "100"
+                    })
+                    @Html.ValidationMessageFor(model => model.NombreCompleto, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Direccion, new { @class = "form-label fw-bold" })
+                    @Html.TextAreaFor(model => model.Direccion, new
+                    {
+                        @class = "form-control",
+                        rows = "3",
+                        maxlength = "200"
+                    })
+                    @Html.ValidationMessageFor(model => model.Direccion, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Telefono, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(model => model.Telefono, new
+                    {
+                        @class = "form-control",
+                        maxlength = "20"
+                    })
+                    @Html.ValidationMessageFor(model => model.Telefono, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Celular, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(model => model.Celular, new
+                    {
+                        @class = "form-control",
+                        maxlength = "20"
+                    })
+                    @Html.ValidationMessageFor(model => model.Celular, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Correo, new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(model => model.Correo, new
+                    {
+                        @class = "form-control",
+                        type = "email",
+                        maxlength = "100"
+                    })
+                    @Html.ValidationMessageFor(model => model.Correo, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group mb-3">
+                    @Html.LabelFor(model => model.Sexo, new { @class = "form-label fw-bold" })
+                    @Html.DropDownListFor(model => model.Sexo, new SelectList(new[] {
+                        new SelectListItem { Text = "Masculino", Value = "M" },
+                        new SelectListItem { Text = "Femenino", Value = "F" },
+                        new SelectListItem { Text = "Otro", Value = "O" }
+                    }, "Value", "Text"), "Seleccionar sexo...", new
+                        {
+                            @class = "form-select",
+                        required = "required"
+                    })
+                    @Html.ValidationMessageFor(model => model.Sexo, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group form-check mb-3">
+                    @Html.CheckBoxFor(model => model.Estado, new { @class = "form-check-input" })
+                    @Html.LabelFor(model => model.Estado, "Cliente Activo", new { @class = "form-check-label fw-bold" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">💾 Actualizar Cliente</button>
+            <button type="button" class="btn btn-danger btn-lg" onclick="inactivarCliente()">🚫 Inactivar Cliente</button>
+            @Html.ActionLink("❌ Cancelar", "Index", null, new { @class = "btn btn-secondary btn-lg" })
+        </div>
+    }
+
+    <!-- Sección para subir PDF -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        @Html.AntiForgeryToken() <!-- Esta línea es crucial -->
+
+        <div class="mb-3">
+            <label for="fileUpload" class="form-label">Seleccionar archivo</label>
+            <input type="file" class="form-control" id="fileUpload" accept=".pdf" required>
+            <div class="invalid-feedback">Por favor seleccione un archivo PDF</div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="subirPDF()">
+            Subir PDF
+        </button>
+    </form>
+
+    <div id="uploadStatus"></div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+              class ClienteEditor {
+           constructor(clienteId) {
+               this.clienteId = clienteId;
+           }
+
+                  async subirPDF() {
+                      const fileInput = document.getElementById('fileUpload');
+                      const file = fileInput.files[0];
+                      const status = document.getElementById('uploadStatus');
+
+                      if (!file) {
+                          status.innerHTML = '<div class="alert alert-warning">Seleccione un archivo PDF</div>';
+                          return;
+                      }
+
+                      if (file.type !== 'application/pdf') {
+                          status.innerHTML = '<div class="alert alert-danger">Solo se permiten archivos PDF</div>';
+                          return;
+                      }
+
+                      // Obtener el token de verificación
+                      const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                      const formData = new FormData();
+                      formData.append('archivo', file);
+                      formData.append('clienteId', this.clienteId);
+
+                      try {
+                          status.innerHTML = '<div class="alert alert-info">Subiendo archivo...</div>';
+
+                          const response = await fetch('/Documentos/Subir', {
+                              method: 'POST',
+                              body: formData,
+                              headers: {
+                                  'RequestVerificationToken': token // Agregar el token aquí
+                              }
+                          });
+
+                          // Verificar si la respuesta es JSON
+                          const contentType = response.headers.get('content-type');
+                          if (!contentType || !contentType.includes('application/json')) {
+                              const errorText = await response.text();
+                              console.error('Respuesta del servidor:', errorText);
+                              throw new Error('El servidor respondió con un error');
+                          }
+
+                          const result = await response.json();
+
+                          if (result.success) {
+                              status.innerHTML = '<div class="alert alert-success">✅ PDF subido exitosamente</div>';
+                              fileInput.value = '';
+                          } else {
+                              status.innerHTML = `<div class="alert alert-danger">❌ Error: ${result.message}</div>`;
+                          }
+                      } catch (error) {
+                          console.error('Error en subirPDF:', error);
+                          status.innerHTML = '<div class="alert alert-danger">❌ Error al subir el archivo</div>';
+                      }
+                  }
+
+           async inactivarCliente() {
+               if (confirm('¿Está seguro de inactivar este cliente? No podrá realizar nuevas operaciones.')) {
+                   try {
+                       const response = await fetch('/Clientes/Delete/' + this.clienteId, {
+                           method: 'POST',
+                           headers: {
+                               'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                           }
+                       });
+
+                       const result = await response.json();
+
+                       if (result.success) {
+                           alert('✅ Cliente inactivado correctamente');
+                           window.location.href = '@Url.Action("Index")';
+                       } else {
+                           alert('❌ Error: ' + result.message);
+                       }
+                   } catch (error) {
+                       console.error('Error:', error);
+                       alert('❌ Error al inactivar el cliente');
+                   }
+               }
+           }
+       }
+
+       // Inicializar editor
+       const editor = new ClienteEditor(@Model.ClienteId);
+
+       // Funciones globales para el onclick
+       function subirPDF() {
+           editor.subirPDF();
+       }
+
+       function inactivarCliente() {
+           editor.inactivarCliente();
+       }
+
+       // Validación del formulario
+       document.addEventListener('DOMContentLoaded', function () {
+           const form = document.querySelector('.needs-validation');
+           form.addEventListener('submit', function (e) {
+               if (!form.checkValidity()) {
+                   e.preventDefault();
+                   e.stopPropagation();
+               }
+               form.classList.add('was-validated');
+           });
+       });
+    </script>
+}

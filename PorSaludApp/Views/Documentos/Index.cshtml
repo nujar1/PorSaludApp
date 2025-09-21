@@ -1,0 +1,114 @@
+﻿@model IEnumerable<PorSaludApp.Models.Documento>
+
+@{
+    ViewBag.Title = "Documentos del Cliente";
+    int Id = ViewBag.Id;
+    string clienteNombre = ViewBag.ClienteNombre;
+}
+
+<div class="container mt-4">
+    <h2>Documentos de @clienteNombre</h2>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        @Html.ActionLink("← Volver a Clientes", "Index", "Clientes", null, new { @class = "btn btn-secondary" })
+
+        <!-- Formulario para subir archivos -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalSubirArchivo">
+            📄 Subir Nuevo Documento
+        </button>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nombre del Archivo</th>
+                        <th>Tipo</th>
+                        <th>Fecha de Carga</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var documento in Model)
+                    {
+                        <tr>
+                            <td>@documento.NombreArchivo</td>
+                            <td>@documento.TipoArchivo</td>
+                            <td>@documento.FechaCarga.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @Html.ActionLink("⬇️ Descargar", "Descargar", new { id = documento.DocumentoId },
+                                    new { @class = "btn btn-success btn-sm" })
+
+                                @using (Html.BeginForm("Eliminar", "Documentos", new { id = documento.DocumentoId }, FormMethod.Post,
+                                    new { @class = "d-inline", onsubmit = "return confirm('¿Está seguro de eliminar este documento?');" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No hay documentos para este cliente.
+        </div>
+    }
+</div>
+
+<!-- Modal para subir archivos -->
+<div class="modal fade" id="modalSubirArchivo" tabindex="-1" aria-labelledby="modalSubirArchivoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSubirArchivoLabel">Subir Nuevo Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            @using (Html.BeginForm("Subir", "Documentos", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Id" />
+
+                    <div class="mb-3">
+                        <label for="archivo" class="form-label">Seleccionar archivo:</label>
+                        <input type="file" name="archivo" id="archivo" accept=".pdf" class="form-control" required />
+                        <div class="form-text">Formatos permitidos: PDF</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    
+    <script>
+        // Mostrar mensajes de resultado
+        @if (TempData["Mensaje"] != null)
+        {
+            <text>alert('@TempData["Mensaje"]');</text>
+        }
+
+        // Validación de tipo de archivo
+        document.getElementById('archivo')?.addEventListener('change', function(e) {
+            var archivo = e.target.files[0];
+            var extensionesPermitidas = /(\.pdf|\)$/i;
+
+            if (archivo && !extensionesPermitidas.exec(archivo.name)) {
+                alert('Solo se permiten archivos PDF.');
+                e.target.value = '';
+            }
+        });
+    </script>
+}
